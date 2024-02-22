@@ -1,4 +1,48 @@
 import streamlit as st
+from members import members
+import base64
+import os
+
+def get_image_base64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        return f"data:image/png;base64,{encoded_string}"
+    else:
+        with open("member_images/default.png", "rb") as default_image_file:
+            encoded_string = base64.b64encode(default_image_file.read()).decode()
+        return f"data:image/png;base64,{encoded_string}"
+
+st.markdown("""
+    <style>
+    .image-container img {
+        border-radius: 50%;
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+    }
+    .skill-chip {
+        display: inline-block;
+        padding: 0 8px;
+        margin-right: 2px;
+        margin-top: -10px !important;
+        font-size: 12px;
+        color: white;
+        background-color: #BC77FF;
+        border-radius: 15px;
+    }
+    .keyword-chip {
+        display: inline-block;
+        padding: 0 8px;
+        margin-right: 2px;
+        margin-top: -10px !important;
+        font-size: 12px;
+        color: white;
+        background-color: #188CFE;
+        border-radius: 15px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 
 def display_header():
@@ -10,6 +54,27 @@ def display_header():
     st.markdown(
         "<p style='text-align: center;'>Use this member search to discover other like-minded builders to connect with. You can also browse member projects and build updates to get an idea of what builders are shipping in real-time!</p>",
         unsafe_allow_html=True)
+
+def display_member(member):
+    profile_image = get_image_base64(f"member_images/{member.get('id')}.png")
+    name = member.get("fields", {}).get("Name", "No Name Provided")
+    skills = member.get("fields", {}).get("What are your areas of expertise you have (select max 4 please)",
+                                          ["No Skills Provided"])
+    past_work = member.get("fields", {}).get("Past work", "No Past Work Provided")
+    currently_building = member.get("fields", {}).get("What will you build", "No Current Projects Provided")
+
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        if profile_image:
+            st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"<span>**{name}**</span><br>", unsafe_allow_html=True)
+        skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
+        st.markdown(skills_html, unsafe_allow_html=True)
+        st.write(f"**Currently Building:** {currently_building}")
+        st.write(f"**Past Work:** {past_work}")
+
+    st.markdown("---")
 
 def choose_data_type():
     st.write("")
@@ -25,7 +90,10 @@ def choose_data_type():
         build_updates = st.button('🎯️ BUILD UPDATES', use_container_width=True)
 
     if builders:
-        st.write("builders")
+        st.write("")
+        st.subheader(f"{len(members)} Builders")
+        for member in members:
+          display_member(member)
     elif projects:
         st.write("projects")
     elif build_updates:
