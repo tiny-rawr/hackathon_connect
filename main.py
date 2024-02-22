@@ -2,6 +2,7 @@ import streamlit as st
 from members import members
 import base64
 import os
+import random
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -92,8 +93,11 @@ def choose_data_type():
     if builders:
         st.write("")
         st.subheader(f"{len(members)} Builders")
-        for member in members:
-          display_member(member)
+        st.write("Showing 50 random builders:")
+        random.shuffle(members)
+
+        for member in members[:50]:
+            display_member(member)
     elif projects:
         st.write("projects")
     elif build_updates:
