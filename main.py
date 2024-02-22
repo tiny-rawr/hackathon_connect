@@ -93,10 +93,10 @@ def choose_data_type():
     if builders:
         st.write("")
         st.subheader(f"{len(members)} Builders")
-        st.write("Showing 50 random builders:")
+        st.write("Showing 20 random builders:")
         random.shuffle(members)
 
-        for member in members[:50]:
+        for member in members[:20]:
             display_member(member)
     elif projects:
         st.write("projects")
