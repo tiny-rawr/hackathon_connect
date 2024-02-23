@@ -45,7 +45,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-
 def display_header():
     left_co, cent_co, last_co = st.columns(3)
     with cent_co:
@@ -78,35 +77,30 @@ def display_member(member):
     st.markdown("---")
 
 def choose_data_type():
-    st.write("")
-    left_co, cent_co, last_co = st.columns(3)
+    tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
 
-    with left_co:
-        builders = st.button('👩‍💻 BUILDERS', use_container_width=True)
+    with tab1:
+        st.session_state.selected_name = st.selectbox("Select a name to filter builders", ["Random 20"] + [member.get("fields", {}).get("Name", "No Name Provided") for member in members], index=0)
 
-    with cent_co:
-        projects = st.button('🚀 PROJECTS', use_container_width=True)
+        if st.session_state.selected_name != "Random 20":
+            selected_member = next((member for member in members if member.get("fields", {}).get("Name", "No Name Provided") == st.session_state.selected_name), None)
+            if selected_member:
+                st.write("")
+                display_member(selected_member)
 
-    with last_co:
-        build_updates = st.button('🎯️ BUILD UPDATES', use_container_width=True)
-
-    if builders:
-        st.write("")
-        st.subheader(f"{len(members)} Builders")
-        st.write("Showing 20 random builders:")
-        random.shuffle(members)
-
-        for member in members[:20]:
-            display_member(member)
-    elif projects:
+        else:
+            st.write("Showing 20 random Builders")
+            random_members = random.sample(members, min(20, len(members)))
+            for member in random_members:
+                display_member(member)
+    with tab2:
         st.write("projects")
-    elif build_updates:
+    with tab3:
         st.write("build_updates")
-
 
 def main():
     display_header()
     choose_data_type()
 
-
-main()
+if __name__ == "__main__":
+    main()
