@@ -1,5 +1,6 @@
 import streamlit as st
 from members import members
+from member_data import create_embedding
 import base64
 import os
 import random
@@ -76,11 +77,22 @@ def display_member(member):
 
     st.markdown("---")
 
+def rag_query():
+    query = st.text_area("", placeholder="🔍 Search members by asking things like: 'Who's working in law?', 'Who is passionate about RAG?'")
+    submit = st.button("Search")
+
+    if submit:
+        embedding = create_embedding(query)
+        st.write(embedding)
+        st.write(query)
+
 def choose_data_type():
+    st.write("")
     tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
 
     with tab1:
-        st.session_state.selected_name = st.selectbox("Select a name to filter builders", ["Random 20"] + [member.get("fields", {}).get("Name", "No Name Provided") for member in members], index=0)
+        st.subheader("Build Club Members")
+        st.session_state.selected_name = st.selectbox("Search member by name:", ["Random 20"] + [member.get("fields", {}).get("Name", "No Name Provided") for member in members], index=0)
 
         if st.session_state.selected_name != "Random 20":
             selected_member = next((member for member in members if member.get("fields", {}).get("Name", "No Name Provided") == st.session_state.selected_name), None)
@@ -94,12 +106,13 @@ def choose_data_type():
             for member in random_members:
                 display_member(member)
     with tab2:
-        st.write("projects")
+        st.subheader("Projects")
     with tab3:
-        st.write("build_updates")
+        st.subheader("Build Updates")
 
 def main():
     display_header()
+    rag_query()
     choose_data_type()
 
 if __name__ == "__main__":
