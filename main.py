@@ -1,6 +1,8 @@
 import streamlit as st
 from members import members
 from member_data import create_embedding
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 import base64
 import os
 import random
@@ -77,14 +79,30 @@ def display_member(member):
 
     st.markdown("---")
 
+def retrieve_members(query_embedding):
+    query_embedding = np.array(query_embedding)
+    member_embeddings = np.array([member['embeddings'] for member in members])
+    similarities = cosine_similarity(query_embedding.reshape(1, -1), member_embeddings)
+
+    # Get indices of top 3 most similar members
+    top_indices = similarities.argsort()[0][::-1][:3]
+
+    # Retrieve top 3 members
+    top_members = [members[i] for i in top_indices]
+
+    return top_members
+
+
 def rag_query():
     query = st.text_area("", placeholder="🔍 Search members by asking things like: 'Who's working in law?', 'Who is passionate about RAG?'")
     submit = st.button("Search")
 
     if submit:
-        embedding = create_embedding(query)
-        st.write(embedding)
-        st.write(query)
+        query_embedding = create_embedding(query)
+        top_members = retrieve_members(query_embedding)
+        for member in top_members:
+            display_member(member)
+        st.markdown("---")
 
 def choose_data_type():
     st.write("")
