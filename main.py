@@ -131,7 +131,7 @@ def paginate_members(members):
     for member in displayed_members:
         display_member(member)
 
-    page_number = st.slider("Select a page (20 members shown per page):", 1, total_pages, st.session_state.page_number)
+    page_number = st.slider("Pages (20 members per page):", 1, total_pages, st.session_state.page_number)
 
     if st.session_state.page_number != page_number:
         st.session_state.page_number = page_number
@@ -143,11 +143,17 @@ def choose_data_type():
     tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
 
     with tab1:
-        st.subheader("Build Club Members")
-        st.info(f"""
-        👷‍There are {len(members)} total build club members.
-        """)
-        st.session_state.selected = st.selectbox("Search member by name:",
+        left_column, right_column = st.columns([2, 1])
+
+        with left_column:
+            st.subheader("Build Club Members")
+
+        with right_column:
+            st.markdown(
+                '<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shr8C5KGPvBqPWkL2">👷‍ Apply to Build Club</a>',
+                unsafe_allow_html=True)
+
+        st.session_state.selected = st.selectbox("Search by name:",
                                                  ["All"] + [member.get("fields", {}).get("Name", "No Name Provided") for
                                                             member in members], index=0)
 
@@ -159,7 +165,7 @@ def choose_data_type():
                 st.write("")
                 display_member(selected_member)
         else:
-            selected_skill = pills("Filter members by area of expertise:", ["All", "AI Engineer", "Backend software dev", "Front end software dev", "Product management", "Go to market", "AI / ML specialist researcher", "Designer", "Domain expert", "Idea validating"],
+            selected_skill = pills("Filter by area of expertise:", ["All", "AI Engineer", "Backend software dev", "Front end software dev", "Product management", "Go to market", "AI / ML specialist researcher", "Designer", "Domain expert", "Idea validating"],
                                 ["🔍", "🤖", "💻", "🖥️", "🤹", "🚀", "🔬", "🎨", "🧠", "💡"], key="selected_skills")
 
             filtered_members = members
@@ -170,10 +176,26 @@ def choose_data_type():
             paginate_members(filtered_members)
 
     with tab2:
-        st.subheader("Projects")
+        left_column, right_column = st.columns([2, 1])
+
+        with left_column:
+            st.subheader("Projects")
+
+        with right_column:
+            st.markdown(
+                '<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shrmRqOBpHYhrOTsr">🚀 Start a new project</a>',
+                unsafe_allow_html=True)
 
     with tab3:
-        st.subheader("Build Updates")
+        left_column, right_column = st.columns([2, 1])
+
+        with left_column:
+            st.subheader("Build Updates")
+
+        with right_column:
+            st.markdown(
+                '<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shreowTFIVXILrfN5">🚢 Ship a build update</a>',
+                unsafe_allow_html=True)
 
 def main():
     display_header()
