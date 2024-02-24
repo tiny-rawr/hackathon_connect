@@ -117,6 +117,26 @@ def rag_query():
     return False
 
 
+def paginate_members():
+    if "page_number" not in st.session_state:
+        st.session_state.page_number = 1
+
+    items_per_page = 20
+    total_pages = len(members) // items_per_page + 1
+
+    start_idx = (st.session_state.page_number - 1) * items_per_page
+    end_idx = start_idx + items_per_page
+    displayed_members = members[start_idx:end_idx]
+
+    page_number = st.slider("Select a page", 1, total_pages, st.session_state.page_number)
+
+    if st.session_state.page_number != page_number:
+        st.session_state.page_number = page_number
+        st.experimental_rerun()
+
+    for member in displayed_members:
+        display_member(member)
+
 
 def choose_data_type():
     st.write("")
@@ -124,19 +144,17 @@ def choose_data_type():
 
     with tab1:
         st.subheader("Build Club Members")
-        st.session_state.selected_name = st.selectbox("Search member by name:", ["Random 20"] + [member.get("fields", {}).get("Name", "No Name Provided") for member in members], index=0)
+        st.session_state.selected_name = st.selectbox("Search member by name:", ["All"] + [member.get("fields", {}).get("Name", "No Name Provided") for member in members], index=0)
 
-        if st.session_state.selected_name != "Random 20":
+        if st.session_state.selected_name != "All":
             selected_member = next((member for member in members if member.get("fields", {}).get("Name", "No Name Provided") == st.session_state.selected_name), None)
             if selected_member:
                 st.write("")
                 display_member(selected_member)
 
         else:
-            st.write("Showing 20 random Builders")
-            random_members = random.sample(members, min(20, len(members)))
-            for member in random_members:
-                display_member(member)
+            paginate_members()
+
     with tab2:
         st.subheader("Projects")
     with tab3:
