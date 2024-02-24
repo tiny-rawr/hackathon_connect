@@ -79,13 +79,13 @@ def display_member(member):
 
     st.markdown("---")
 
-def retrieve_members(query_embedding):
+def retrieve_members(query_embedding, result_limit=3):
     query_embedding = np.array(query_embedding)
     member_embeddings = np.array([member['embeddings'] for member in members])
     similarities = cosine_similarity(query_embedding.reshape(1, -1), member_embeddings)
 
     # Get indices of top 3 most similar members
-    top_indices = similarities.argsort()[0][::-1][:3]
+    top_indices = similarities.argsort()[0][::-1][:result_limit]
 
     # Retrieve top 3 members
     top_members = [members[i] for i in top_indices]
@@ -100,9 +100,23 @@ def rag_query():
     if submit:
         query_embedding = create_embedding(query)
         top_members = retrieve_members(query_embedding)
-        for member in top_members:
-            display_member(member)
-        st.markdown("---")
+
+        tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
+
+        with tab1:
+            st.subheader("Top 3 members who match your search")
+            for member in top_members:
+                display_member(member)
+        with tab2:
+            st.subheader("Top 3 projects who match your search")
+        with tab3:
+            st.subheader("Top 20 build updates who match your search")
+
+        return True
+
+    return False
+
+
 
 def choose_data_type():
     st.write("")
@@ -130,8 +144,11 @@ def choose_data_type():
 
 def main():
     display_header()
-    rag_query()
-    choose_data_type()
+
+    query_submitted = rag_query()
+
+    if not query_submitted:
+        choose_data_type()
 
 if __name__ == "__main__":
     main()
