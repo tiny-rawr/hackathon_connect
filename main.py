@@ -6,6 +6,7 @@ import numpy as np
 import base64
 import os
 import random
+from streamlit_pills import pills
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -116,26 +117,25 @@ def rag_query():
 
     return False
 
-
-def paginate_members():
+def paginate_members(members):
     if "page_number" not in st.session_state:
         st.session_state.page_number = 1
 
     items_per_page = 20
-    total_pages = len(members) // items_per_page + 1
+    total_pages = (len(members) - 1) // items_per_page + 1
 
     start_idx = (st.session_state.page_number - 1) * items_per_page
     end_idx = start_idx + items_per_page
     displayed_members = members[start_idx:end_idx]
 
-    page_number = st.slider("Select a page", 1, total_pages, st.session_state.page_number)
+    for member in displayed_members:
+        display_member(member)
+
+    page_number = st.slider("Select a page (20 members shown per page):", 1, total_pages, st.session_state.page_number)
 
     if st.session_state.page_number != page_number:
         st.session_state.page_number = page_number
         st.experimental_rerun()
-
-    for member in displayed_members:
-        display_member(member)
 
 
 def choose_data_type():
@@ -144,19 +144,34 @@ def choose_data_type():
 
     with tab1:
         st.subheader("Build Club Members")
-        st.session_state.selected_name = st.selectbox("Search member by name:", ["All"] + [member.get("fields", {}).get("Name", "No Name Provided") for member in members], index=0)
+        st.info(f"""
+        👷‍There are {len(members)} total build club members.
+        """)
+        st.session_state.selected = st.selectbox("Search member by name:",
+                                                 ["All"] + [member.get("fields", {}).get("Name", "No Name Provided") for
+                                                            member in members], index=0)
 
-        if st.session_state.selected_name != "All":
-            selected_member = next((member for member in members if member.get("fields", {}).get("Name", "No Name Provided") == st.session_state.selected_name), None)
+        if st.session_state.selected != "All":
+            selected_member = next((member for member in members if member.get("fields", {}).get("Name",
+                                                                                                 "No Name Provided") == st.session_state.selected),
+                                   None)
             if selected_member:
                 st.write("")
                 display_member(selected_member)
-
         else:
-            paginate_members()
+            selected_skill = pills("Filter members by area of expertise:", ["All", "AI Engineer", "Backend software dev", "Front end software dev", "Product management", "Go to market", "AI / ML specialist researcher", "Designer", "Domain expert", "Idea validating"],
+                                ["🔍", "🤖", "💻", "🖥️", "🤹", "🚀", "🔬", "🎨", "🧠", "💡"], key="selected_skills")
+
+            filtered_members = members
+            if selected_skill != "All":
+                filtered_members = [member for member in members if any(
+                    skill in member.get("fields", {}).get("What are your areas of expertise you have (select max 4 please)", []) for skill in [selected_skill])]
+
+            paginate_members(filtered_members)
 
     with tab2:
         st.subheader("Projects")
+
     with tab3:
         st.subheader("Build Updates")
 
