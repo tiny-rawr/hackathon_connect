@@ -51,7 +51,7 @@ def save_member_image(member):
     image_url = member_fields.get("Profile picture", [{}])[0].get("url")
 
     if image_url:
-        image_path = os.path.join("member_images", f"{member['id']}.jpg")
+        image_path = os.path.join("member_images", f"{member['id']}.png")
 
         if not os.path.exists(image_path):
             image_response = requests.get(image_url)
@@ -61,30 +61,28 @@ def save_member_image(member):
                 member["profile_image"] = image_path
             else:
                 print(f"Failed to download image for member ID {member['id']}")
-                member["profile_image"] = None
+                member["profile_image"] = ""
         else:
             print(f"Image file already exists for member ID {member['id']}")
             member["profile_image"] = image_path
     else:
-        member["profile_image"] = None
+        member["profile_image"] = ""
 
 
 def save_members(new_members_to_process):
     if new_members_to_process:
-        if not os.path.exists('members.py'):
-            with open('members.py', 'w') as f:
-                json.dump([], f)
-
-        try:
+        existing_members = []
+        if os.path.exists('members.py'):
             with open('members.py', 'r') as f:
-                existing_members = json.load(f)
-        except json.JSONDecodeError:
-            existing_members = []
+                try:
+                    existing_members = eval(f.read().strip())
+                except (SyntaxError, NameError):
+                    pass
 
         existing_members.extend(new_members_to_process)
 
         with open('members.py', 'w') as f:
-            json.dump(existing_members, f, indent=4)
+            f.write("members = " + json.dumps(existing_members, indent=4))
 
         print(f"New members added to file: {len(new_members_to_process)}")
     else:
@@ -97,11 +95,14 @@ def find_new_members(updated_members, existing_members_ids):
 def process_member(member, current_index, total_members):
     if 'Name' not in member['fields'] or not member['fields']['Name']:
         print(f"Skipping member with ID {member['id']} as their name is missing.")
-        return None
+        return ""
 
     save_member_image(member)
     member_name = member['fields']['Name']
     updates = get_build_updates()
+    building = member["fields"].get("What will you build", "")
+    past_work = member["fields"].get("Past work", "")
+    text_representation = f"Name: {member_name}, currently building: {building}, past work: {past_work}"
 
     member_updates = [update for update in updates if member_name.lower() in update['fields'].get('Full name', '').lower()]
 
@@ -114,7 +115,7 @@ def process_member(member, current_index, total_members):
     for idx, update in enumerate(member_updates, start=1):
         print(f"Processing update {idx} out of {total_updates}")
 
-        project_name = update['fields'].get('Project', update['fields'].get('😊 Build project name', None))
+        project_name = update['fields'].get('Project', update['fields'].get('😊 Build project name', ""))
         if not project_name:
             continue  # Skip this update if neither key is present
 
@@ -122,12 +123,13 @@ def process_member(member, current_index, total_members):
             member_projects[project_name] = {'build_updates': []}
 
         clean_update_data = {
-            "date": update["fields"].get("Build update date", None),
-            "build_update": update["fields"].get("🏗 Build goal for week", None),
-            "build_url": update['fields'].get("🚢 Build URL", None),
-            "asks": update['fields'].get("Would you like to submit a help request or have any asks from community?", None),
-            "customers_talked_to": update['fields'].get("How many customers did you test with this week?", None),
-            "milestones": update['fields'].get("Did you reach a key milestone you want to share?", None)
+            "member_id": member['id'],
+            "date": update["fields"].get("Build update date", ""),
+            "build_update": update["fields"].get("🏗 Build goal for week", ""),
+            "build_url": update['fields'].get("🚢 Build URL", ""),
+            "asks": update['fields'].get("Would you like to submit a help request or have any asks from community?", ""),
+            "customers_talked_to": update['fields'].get("How many customers did you test with this week?", ""),
+            "milestones": update['fields'].get("Did you reach a key milestone you want to share?", "")
         }
 
         clean_update_data["build_update_embeddings"] = create_embedding(clean_update_data["build_update"])
@@ -140,16 +142,18 @@ def process_member(member, current_index, total_members):
         "id": member["id"],
         "profile_picture": f"member_images/{member['id']}.png",
         "name": member_name,
-        "building": member["fields"].get("What will you build", None),
-        "past_work": member["fields"].get("Past work", None),
-        "linkedin_url": member["fields"].get("What's the link to your LinkedIn?", None),
-        "areas_of_expertise": member["fields"].get("What are your areas of expertise you have (select max 4 please)", None),
+        "building": building,
+        "past_work": past_work,
+        "linkedin_url": member["fields"].get("What's the link to your LinkedIn?", ""),
+        "areas_of_expertise": member["fields"].get("What are your areas of expertise you have (select max 4 please)", ""),
+        "member_text_representation": text_representation,
+        "member_embedding": create_embedding(text_representation),
         "projects": projects_array
     }
 
 if __name__ == "__main__":
     members = get_members("Accepted only")
-    members = members[:10]
+    members = members
     total_members = len(members)
     print(f"Total members to process: {total_members}")
 

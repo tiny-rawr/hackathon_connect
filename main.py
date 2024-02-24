@@ -1,11 +1,10 @@
 import streamlit as st
 from members import members
-from member_data import create_embedding
+from get_members import create_embedding
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import base64
 import os
-import random
 from streamlit_pills import pills
 
 def get_image_base64(path):
@@ -60,12 +59,13 @@ def display_header():
         unsafe_allow_html=True)
 
 def display_member(member):
-    profile_image = get_image_base64(f"member_images/{member.get('id')}.png")
-    name = member.get("fields", {}).get("Name", "No Name Provided")
-    skills = member.get("fields", {}).get("What are your areas of expertise you have (select max 4 please)",
-                                          ["No Skills Provided"])
-    past_work = member.get("fields", {}).get("Past work", "No Past Work Provided")
-    currently_building = member.get("fields", {}).get("What will you build", "No Current Projects Provided")
+    if not isinstance(member, dict) or 'profile_picture' not in member:
+        print("Skipping member: No profile picture found.")
+        return
+    profile_image = get_image_base64(member['profile_picture'])
+
+    name = member["name"]
+    skills = member["areas_of_expertise"]
 
     col1, col2 = st.columns([1, 3])
     with col1:
@@ -75,23 +75,19 @@ def display_member(member):
         st.markdown(f"<span>**{name}**</span><br>", unsafe_allow_html=True)
         skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
         st.markdown(skills_html, unsafe_allow_html=True)
-        st.write(f"**Currently Building:** {currently_building}")
-        st.write(f"**Past Work:** {past_work}")
+        st.write(f"**Currently Building:** {member['building']}")
+        st.write(f"**Past Work:** {member['past_work']}")
 
     st.markdown("---")
 
-def retrieve_members(query_embedding, result_limit=3):
-    query_embedding = np.array(query_embedding)
-    member_embeddings = np.array([member['embeddings'] for member in members])
-    similarities = cosine_similarity(query_embedding.reshape(1, -1), member_embeddings)
+def cosine_similarity(vec1, vec2):
+    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
 
-    # Get indices of top 3 most similar members
-    top_indices = similarities.argsort()[0][::-1][:result_limit]
-
-    # Retrieve top 3 members
-    top_members = [members[i] for i in top_indices]
-
-    return top_members
+def retrieve_and_rank(query_embedding, items, embedding_key):
+    valid_items = [item for item in items if isinstance(item, dict) and embedding_key in item]
+    similarities = [(item, cosine_similarity(query_embedding, item[embedding_key])) for item in valid_items]
+    sorted_items = sorted(similarities, key=lambda x: x[1], reverse=True)
+    return [item[0] for item in sorted_items]
 
 
 def rag_query():
@@ -100,13 +96,15 @@ def rag_query():
 
     if submit:
         query_embedding = create_embedding(query)
-        top_members = retrieve_members(query_embedding)
+
+        # Retrieve and rank members based on the query
+        top_members = retrieve_and_rank(query_embedding, members, 'member_embedding')
 
         tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
 
         with tab1:
             st.subheader("Top 3 members who match your search")
-            for member in top_members:
+            for member in top_members[:3]:
                 display_member(member)
         with tab2:
             st.subheader("Top 3 projects who match your search")
@@ -137,7 +135,6 @@ def paginate_members(members):
         st.session_state.page_number = page_number
         st.experimental_rerun()
 
-
 def choose_data_type():
     st.write("")
     tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
@@ -153,56 +150,19 @@ def choose_data_type():
                 '<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shr8C5KGPvBqPWkL2">👷‍ Apply to Build Club</a>',
                 unsafe_allow_html=True)
 
-        st.session_state.selected = st.selectbox("Search by name:",
-                                                 ["All"] + [member.get("fields", {}).get("Name", "No Name Provided") for
-                                                            member in members], index=0)
-
-        if st.session_state.selected != "All":
-            selected_member = next((member for member in members if member.get("fields", {}).get("Name",
-                                                                                                 "No Name Provided") == st.session_state.selected),
-                                   None)
-            if selected_member:
-                st.write("")
-                display_member(selected_member)
-        else:
-            selected_skill = pills("Filter by area of expertise:", ["All", "AI Engineer", "Backend software dev", "Front end software dev", "Product management", "Go to market", "AI / ML specialist researcher", "Designer", "Domain expert", "Idea validating"],
-                                ["🔍", "🤖", "💻", "🖥️", "🤹", "🚀", "🔬", "🎨", "🧠", "💡"], key="selected_skills")
-
-            filtered_members = members
-            if selected_skill != "All":
-                filtered_members = [member for member in members if any(
-                    skill in member.get("fields", {}).get("What are your areas of expertise you have (select max 4 please)", []) for skill in [selected_skill])]
-
-            paginate_members(filtered_members)
+        paginate_members(members)
 
     with tab2:
-        left_column, right_column = st.columns([2, 1])
-
-        with left_column:
-            st.subheader("Projects")
-
-        with right_column:
-            st.markdown(
-                '<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shrmRqOBpHYhrOTsr">🚀 Start a new project</a>',
-                unsafe_allow_html=True)
+        st.subheader("Build Club Projects")
 
     with tab3:
-        left_column, right_column = st.columns([2, 1])
+        st.subheader("Build Club Updates")
 
-        with left_column:
-            st.subheader("Build Updates")
-
-        with right_column:
-            st.markdown(
-                '<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shreowTFIVXILrfN5">🚢 Ship a build update</a>',
-                unsafe_allow_html=True)
-
+# Main function
 def main():
     display_header()
 
-    query_submitted = rag_query()
-
-    if not query_submitted:
+    if not rag_query():
         choose_data_type()
 
 if __name__ == "__main__":
