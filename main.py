@@ -287,32 +287,21 @@ def choose_data_type():
         with right_column:
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shr8C5KGPvBqPWkL2">👷‍ Apply to Build Club</a>',unsafe_allow_html=True)
 
-        member_names = [member["name"] for member in members if isinstance(member, dict) and "name" in member]
-        st.session_state.selected = st.selectbox("Search member by name:", ["All"] + member_names)
 
-        if st.session_state.selected != "All":
-            selected_member = next((member for member in members if
-                                    isinstance(member, dict) and "name" in member and member[
-                                        "name"] == st.session_state.selected), None)
+        selected_skill = pills("Filter members by area of expertise:",
+                               ["All", "AI Engineer", "Backend software dev", "Front end software dev",
+                                "Product management", "Go to market", "AI / ML specialist researcher", "Designer",
+                                "Domain expert", "Idea validating"],
+                               ["🔍", "🤖", "💻", "🖥️", "🤹", "🚀", "🔬", "🎨", "🧠", "💡"], key="selected_skills")
 
-            if selected_member:
-                st.write("")
-                display_member(selected_member)
-            else:
-                st.error(f"Member '{st.session_state.selected}' not found.")
+        filtered_members = members
+        if selected_skill != "All":
+            filtered_members = [member for member in members if isinstance(member, dict) and any(
+                skill in member.get("areas_of_expertise", []) for skill in [selected_skill])]
 
-        else:
-            selected_skill = pills("Filter members by area of expertise:",
-                                   ["All", "AI Engineer", "Backend software dev", "Front end software dev",
-                                    "Product management", "Go to market", "AI / ML specialist researcher", "Designer",
-                                    "Domain expert", "Idea validating"],
-                                   ["🔍", "🤖", "💻", "🖥️", "🤹", "🚀", "🔬", "🎨", "🧠", "💡"], key="selected_skills")
+        paginate_members(filtered_members)
 
-            filtered_members = members
-            if selected_skill != "All":
-                filtered_members = [member for member in members if isinstance(member, dict) and any(
-                    skill in member.get("areas_of_expertise", []) for skill in [selected_skill])]
-            paginate_members(filtered_members)
+
 
     with tab2:
         left_column, right_column = st.columns([2, 1])
