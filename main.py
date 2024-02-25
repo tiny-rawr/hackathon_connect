@@ -74,6 +74,7 @@ def display_member(member):
     skills = member["areas_of_expertise"]
     building = member.get('building', '').encode('utf-8', 'ignore').decode('utf-8')
     past_work = member.get('past_work', '').encode('utf-8', 'ignore').decode('utf-8')
+    projects = member.get('projects', '')
 
     col1, col2 = st.columns([1, 3])
     with col1:
@@ -84,7 +85,17 @@ def display_member(member):
         skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
         st.markdown(skills_html, unsafe_allow_html=True)
         st.write(f"**Currently Building:** {building}")
-        st.write(f"**Past Work:** {past_work}")
+        if past_work:
+          st.write(f"**Past Work:** {past_work}")
+        if projects:
+          st.write("**Projects:**")
+          for project in projects:
+              updates = project["details"]["build_updates"]
+              with st.expander(f"🚀 {project['project_name']}"):
+                  if updates:
+                    for update in updates:
+                        st.info(f"**{update['date']}: 🚢 Build Update!**\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+
 
     st.markdown("---")
 
@@ -105,7 +116,6 @@ def rag_query():
     if submit:
         query_embedding = create_embedding(query)
 
-        # Retrieve and rank members based on the query
         top_members = retrieve_and_rank(query_embedding, members, 'member_embedding')
 
         tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
