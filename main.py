@@ -84,7 +84,7 @@ def display_build_update(update):
     if date:
         st.info(f"**{date}: **{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
     else:
-        st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n ***{build_url}***")
+        st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n {build_url}")
 
 
 def display_project(member):
