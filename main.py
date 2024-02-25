@@ -72,6 +72,8 @@ def display_member(member):
 
     name = member["name"]
     skills = member["areas_of_expertise"]
+    building = member.get('building', '').encode('utf-8', 'ignore').decode('utf-8')
+    past_work = member.get('past_work', '').encode('utf-8', 'ignore').decode('utf-8')
 
     col1, col2 = st.columns([1, 3])
     with col1:
@@ -81,8 +83,8 @@ def display_member(member):
         st.markdown(f"<span>**<a class='linkedin_link' href='{member['linkedin_url']}'>{name}</a>**</span><br>", unsafe_allow_html=True)
         skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
         st.markdown(skills_html, unsafe_allow_html=True)
-        st.write(f"**Currently Building:** {member['building'].encode('utf-8', 'ignore').decode('utf-8')}")
-        st.write(f"**Past Work:** {member['past_work']}")
+        st.write(f"**Currently Building:** {building}")
+        st.write(f"**Past Work:** {past_work}")
 
     st.markdown("---")
 
@@ -154,15 +156,20 @@ def choose_data_type():
         with right_column:
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shr8C5KGPvBqPWkL2">👷‍ Apply to Build Club</a>',unsafe_allow_html=True)
 
-        member_names = [member["name"] for member in members if isinstance(member, dict)]
+        member_names = [member["name"] for member in members if isinstance(member, dict) and "name" in member]
         st.session_state.selected = st.selectbox("Search member by name:", ["All"] + member_names)
 
         if st.session_state.selected != "All":
-            selected_member = next((member for member in members if member["name"] == st.session_state.selected),
-                                   None)
+            selected_member = next((member for member in members if
+                                    isinstance(member, dict) and "name" in member and member[
+                                        "name"] == st.session_state.selected), None)
+
             if selected_member:
                 st.write("")
                 display_member(selected_member)
+            else:
+                st.error(f"Member '{st.session_state.selected}' not found.")
+
         else:
             selected_skill = pills("Filter members by area of expertise:",
                                    ["All", "AI Engineer", "Backend software dev", "Front end software dev",
