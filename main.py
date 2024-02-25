@@ -247,7 +247,7 @@ def rag_query():
                 build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
 
                 st.markdown(
-                    f"<section class='build-update'><span><div class='image-container-small'><img src='{member_picture}'> <a href='{update.get('linkedin_url', '')}'>By {member_name}</a> in {project_name}</span></div><p>{build_update}</p><p><a href='{build_url}'>{build_url}</a></p></section>",
+                    f"<section class='build-update'><span><div class='image-container-small'><img src='{member_picture}'> <a href='{update.get('linkedin_url', '')}'>By {member_name}</a> in {project_name}</span></div><p>{build_update}</p><p>{build_url}</p></section>",
                     unsafe_allow_html=True)
 
         return True
@@ -357,7 +357,7 @@ def choose_data_type():
                         build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
 
                         st.markdown(
-                            f"<section class='build-update'><span><div class='image-container-small'><img src='{profile_image}'> <a href='{member.get('linkedin_url', '')}'>By {member.get('name', '')}</a></span></div><p>{build_update}</p><p><a href='{build_url}'>{build_url}</a></p></section>",
+                            f"<section class='build-update'><span><div class='image-container-small'><img src='{profile_image}'> <a href='{member.get('linkedin_url', '')}'>By {member.get('name', '')}</a></span></div><p>{build_update}</p><p>{build_url}</p></section>",
                             unsafe_allow_html=True)
 
 
