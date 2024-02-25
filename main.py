@@ -187,7 +187,7 @@ def rag_query():
     query = st.text_area("", placeholder="🔍 Search members by asking things like: 'Who's working in law?', 'Who is passionate about RAG?'")
     submit = st.button("Search")
 
-    if query:  # Check if the query is not empty
+    if submit:
         query_embedding = create_embedding(query)
 
         top_members = retrieve_and_rank(query_embedding, members, 'member_embedding')
@@ -254,7 +254,6 @@ def rag_query():
 
     return False
 
-
 def paginate_members(members):
     if "page_number" not in st.session_state:
         st.session_state.page_number = 1
@@ -314,17 +313,52 @@ def choose_data_type():
                 filtered_members = [member for member in members if isinstance(member, dict) and any(
                     skill in member.get("areas_of_expertise", []) for skill in [selected_skill])]
             paginate_members(filtered_members)
-            if st.session_state.selected != "All":
-                selected_member = next((member for member in filtered_members if
-                                        isinstance(member, dict) and "name" in member and member[
-                                            "name"] == st.session_state.selected), None)
 
-                if selected_member:
-                    st.write("")
-                    display_member(selected_member)
-                else:
-                    st.error(f"Member '{st.session_state.selected}' not found.")
+    with tab2:
+        left_column, right_column = st.columns([2, 1])
 
+        with left_column:
+            st.subheader("Build Club Projects")
+
+        with right_column:
+            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shrmRqOBpHYhrOTsr">🚀 Start a new project!</a>',unsafe_allow_html=True)
+
+        random.shuffle(members)
+        for member in members:
+          display_project(member)
+
+    with tab3:
+        left_column, right_column = st.columns([2, 1])
+
+        with left_column:
+            st.subheader("Build Club Updates")
+
+        with right_column:
+            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shreowTFIVXILrfN5">🚢 Ship a build update!</a>',unsafe_allow_html=True)
+
+        random.shuffle(members)
+
+        for member in members:
+            if not isinstance(member, dict) or 'profile_picture' not in member:
+                print("Skipping member: No profile picture found.")
+                continue
+
+            projects = member.get("projects", [])
+            profile_image = get_image_base64(member.get('profile_picture', ''))
+
+            for project in projects:
+                updates = project.get("details", {}).get("build_updates", [])
+                if updates:
+                    for update in updates:
+                        build_url = update.get("build_url", "")
+                        build_update = update.get("build_update", "")
+
+                        build_update = build_update.encode('utf-8', 'ignore').decode('utf-8')
+                        build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
+
+                        st.markdown(
+                            f"<section class='build-update'><span><div class='image-container-small'><img src='{profile_image}'> <a href='{member.get('linkedin_url', '')}'>By {member.get('name', '')}</a></span></div><p>{build_update}</p><p>{build_url}</p></section>",
+                            unsafe_allow_html=True)
 
 
 def main():
