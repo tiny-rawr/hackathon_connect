@@ -45,6 +45,12 @@ st.markdown("""
         background-color: #188CFE;
         border-radius: 15px;
     }
+    .linkedin_link {
+        color: black !important;
+    }
+    .linkedin_link:hover {
+        color: #188CFE !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -72,10 +78,10 @@ def display_member(member):
         if profile_image:
             st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<span>**{name}**</span><br>", unsafe_allow_html=True)
+        st.markdown(f"<span>**<a class='linkedin_link' href='{member['linkedin_url']}'>{name}</a>**</span><br>", unsafe_allow_html=True)
         skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
         st.markdown(skills_html, unsafe_allow_html=True)
-        st.write(f"**Currently Building:** {member['building']}")
+        st.write(f"**Currently Building:** {member['building'].encode('utf-8', 'ignore').decode('utf-8')}")
         st.write(f"**Past Work:** {member['past_work']}")
 
     st.markdown("---")
