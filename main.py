@@ -26,6 +26,12 @@ st.markdown("""
         height: 100px;
         object-fit: cover;
     }
+    .image-container-small img {
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        object-fit: cover;
+    }
     .skill-chip {
         display: inline-block;
         padding: 0 8px;
@@ -52,6 +58,13 @@ st.markdown("""
     .linkedin_link:hover {
         color: #188CFE !important;
     }
+    .build-update {
+      box-sizing: border-box;
+      padding: 1rem;
+      background-color: #EFF9FE;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -64,6 +77,15 @@ def display_header():
     st.markdown(
         "<p style='text-align: center;'>Use this member search to discover other like-minded builders to connect with. You can also browse member projects and build updates to get an idea of what builders are shipping in real-time!</p>",
         unsafe_allow_html=True)
+
+def display_build_update(update):
+    date = update["date"]
+    build_url = update["build_url"].encode('utf-8', 'ignore').decode('utf-8')
+    if date:
+        st.info(f"**{date}: **{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+    else:
+        st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n[{build_url}]({build_url})")
+
 
 def display_project(member):
     if not isinstance(member, dict) or 'profile_picture' not in member:
@@ -84,15 +106,10 @@ def display_project(member):
                 st.subheader(project['project_name'])
                 st.markdown(f"By [{name}]({member['linkedin_url']})")
               if updates:
-                st.write("")
-                st.write(f"**Updates (x {len(updates)})**:")
-                for update in updates:
-                  date = update["date"]
-                  build_url = update["build_url"]
-                  if date:
-                      st.info(f"**{update['date']}: **{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
-                  else:
-                      st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n[{build_url}]({build_url})")
+                  st.write("")
+                  st.write(f"**Updates (x {len(updates)})**:")
+                  for update in updates:
+                    display_build_update(update)
 
 
 
@@ -251,6 +268,31 @@ def choose_data_type():
 
         with right_column:
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shreowTFIVXILrfN5">🚢 Ship a build update!</a>',unsafe_allow_html=True)
+
+        random.shuffle(members)
+
+        for member in members:
+            if not isinstance(member, dict) or 'profile_picture' not in member:
+                print("Skipping member: No profile picture found.")
+                continue
+
+            projects = member.get("projects", [])
+            profile_image = get_image_base64(member.get('profile_picture', ''))
+
+            for project in projects:
+                updates = project.get("details", {}).get("build_updates", [])
+                if updates:
+                    for update in updates:
+                        build_url = update.get("build_url", "")
+                        build_update = update.get("build_update", "")
+
+                        build_update = build_update.encode('utf-8', 'ignore').decode('utf-8')
+                        build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
+
+                        st.markdown(
+                            f"<section class='build-update'><span><div class='image-container-small'><img src='{profile_image}'> <a href='{member.get('linkedin_url', '')}'>By {member.get('name', '')}</a></span></div><p>{build_update}</p><p><a href='{build_url}'>{build_url}</a></p></section>",
+                            unsafe_allow_html=True)
+
 
 def main():
     display_header()
