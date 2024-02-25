@@ -162,6 +162,26 @@ def retrieve_and_rank(query_embedding, items, embedding_key):
     sorted_items = sorted(similarities, key=lambda x: x[1], reverse=True)
     return [item[0] for item in sorted_items]
 
+def retrieve_and_rank_build_updates(query_embedding, members, embedding_key):
+    valid_build_updates = []
+    for member in members:
+        if "projects" in member:
+            for project in member["projects"]:
+                if "build_updates" in project["details"]:
+                    for build_update in project["details"]["build_updates"]:
+                        if embedding_key in build_update:
+                            valid_build_updates.append({
+                                "member_name": member["name"],
+                                "member_picture": get_image_base64(member["profile_picture"]),
+                                "build_update": build_update,
+                                "project_name": project['project_name'],
+                                "similarity": cosine_similarity(query_embedding, build_update[embedding_key])
+                            })
+
+    sorted_build_updates = sorted(valid_build_updates, key=lambda x: x["similarity"], reverse=True)
+    return sorted_build_updates
+
+
 
 def rag_query():
     query = st.text_area("", placeholder="🔍 Search members by asking things like: 'Who's working in law?', 'Who is passionate about RAG?'")
@@ -171,6 +191,7 @@ def rag_query():
         query_embedding = create_embedding(query)
 
         top_members = retrieve_and_rank(query_embedding, members, 'member_embedding')
+        top_build_updates = retrieve_and_rank_build_updates(query_embedding, members, 'build_update_embeddings')
 
         tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
 
@@ -179,9 +200,55 @@ def rag_query():
             for member in top_members[:3]:
                 display_member(member)
         with tab2:
-            st.subheader("Top 5 projects who match your search")
+            st.subheader("Top 5 projects that match your search")
+            unique_projects = set()
+            for update in top_build_updates[:20]:
+                unique_projects.add(update['project_name'])
+            for member in members:
+                if not isinstance(member, dict):
+                    print("Skipping member: Not a dictionary.")
+                    continue
+                projects = member.get("projects", [])
+                if projects:
+                    for project in projects:
+                        if not isinstance(member, dict) or 'profile_picture' not in member:
+                            print("Skipping member: No profile picture found.")
+                            return
+                        profile_image = get_image_base64(member['profile_picture'])
+                        for project_name in list(unique_projects)[:5]:
+                          if project_name == project["project_name"]:
+                              updates = project["details"]["build_updates"]
+                              with st.expander(f"🚀 {project['project_name'].upper()} | By {member['name']}"):
+                                  col1, col2 = st.columns([1, 3])
+                                  with col1:
+                                      if profile_image:
+                                          st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>",
+                                                      unsafe_allow_html=True)
+                                  with col2:
+                                      st.subheader(project['project_name'])
+                                      st.markdown(f"By [{member['name']}]({member['linkedin_url']})")
+                                  if updates:
+                                      st.write("")
+                                      st.write(f"**Updates (x {len(updates)})**:")
+                                      for update in updates:
+                                          display_build_update(update)
+
         with tab3:
             st.subheader("Top 20 build updates who match your search")
+
+            for update in top_build_updates[:20]:
+                build_url = update.get("build_url", "")
+                project_name = update.get("project_name", "")
+                build_update_data = update.get("build_update", {})
+                member_name = update.get("member_name", "")
+                member_picture = update.get("member_picture", "")
+
+                build_update = build_update_data.get("build_update", "").encode('utf-8', 'ignore').decode('utf-8')
+                build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
+
+                st.markdown(
+                    f"<section class='build-update'><span><div class='image-container-small'><img src='{member_picture}'> <a href='{update.get('linkedin_url', '')}'>By {member_name}</a> in {project_name}</span></div><p>{build_update}</p><p><a href='{build_url}'>{build_url}</a></p></section>",
+                    unsafe_allow_html=True)
 
         return True
 
