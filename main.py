@@ -6,6 +6,7 @@ import numpy as np
 import base64
 import os
 from streamlit_pills import pills
+import random
 
 def get_image_base64(path):
     if os.path.exists(path):
@@ -64,6 +65,38 @@ def display_header():
         "<p style='text-align: center;'>Use this member search to discover other like-minded builders to connect with. You can also browse member projects and build updates to get an idea of what builders are shipping in real-time!</p>",
         unsafe_allow_html=True)
 
+def display_project(member):
+    if not isinstance(member, dict) or 'profile_picture' not in member:
+        print("Skipping member: No profile picture found.")
+        return
+    name = member["name"]
+    profile_image = get_image_base64(member['profile_picture'])
+    projects = member.get('projects', '')
+    if projects:
+        for project in projects:
+            updates = project["details"]["build_updates"]
+            with st.expander(f"🚀 {project['project_name'].upper()} | By {name}"):
+              col1, col2 = st.columns([1, 3])
+              with col1:
+                if profile_image:
+                  st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>",unsafe_allow_html=True)
+              with col2:
+                st.subheader(project['project_name'])
+                st.markdown(f"By [{name}]({member['linkedin_url']})")
+              if updates:
+                st.write("")
+                st.write(f"**Updates (x {len(updates)})**:")
+                for update in updates:
+                  date = update["date"]
+                  build_url = update["build_url"]
+                  if date:
+                      st.info(f"**{update['date']}: **{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+                  else:
+                      st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n[{build_url}]({build_url})")
+
+
+
+
 def display_member(member):
     if not isinstance(member, dict) or 'profile_picture' not in member:
         print("Skipping member: No profile picture found.")
@@ -94,7 +127,11 @@ def display_member(member):
               with st.expander(f"🚀 {project['project_name']}"):
                   if updates:
                     for update in updates:
-                        st.info(f"**{update['date']}: 🚢 Build Update!**\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+                        date = update["date"]
+                        if date:
+                            st.info(f"**{update['date']}: 🚢 Build Update!**{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+                        else:
+                            st.info(f"**🚢 Build Update!**\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
 
 
     st.markdown("---")
@@ -125,7 +162,7 @@ def rag_query():
             for member in top_members[:3]:
                 display_member(member)
         with tab2:
-            st.subheader("Top 3 projects who match your search")
+            st.subheader("Top 5 projects who match your search")
         with tab3:
             st.subheader("Top 20 build updates who match your search")
 
@@ -202,6 +239,10 @@ def choose_data_type():
         with right_column:
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shrmRqOBpHYhrOTsr">🚀 Start a new project!</a>',unsafe_allow_html=True)
 
+        random.shuffle(members)
+        for member in members:
+          display_project(member)
+
     with tab3:
         left_column, right_column = st.columns([2, 1])
 
@@ -211,7 +252,6 @@ def choose_data_type():
         with right_column:
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shreowTFIVXILrfN5">🚢 Ship a build update!</a>',unsafe_allow_html=True)
 
-# Main function
 def main():
     display_header()
 
