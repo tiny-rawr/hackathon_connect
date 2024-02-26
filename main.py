@@ -96,21 +96,19 @@ def display_project(member):
     projects = member.get('projects', '')
     if projects:
         for project in projects:
-            updates = project["details"]["build_updates"]
-            with st.expander(f"🚀 {project['project_name'].upper()} | By {name}"):
-              col1, col2 = st.columns([1, 3])
-              with col1:
-                if profile_image:
-                  st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>",unsafe_allow_html=True)
-              with col2:
-                st.subheader(project['project_name'])
-                st.markdown(f"By [{name}]({member['linkedin_url']})")
-              if updates:
-                  st.write("")
-                  st.write(f"**Updates (x {len(updates)})**:")
-                  for update in updates:
-                    display_build_update(update)
+            st.markdown(f"🚀 **{project['project_name'].upper()}** | By [{name}]({member['linkedin_url']})")
 
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                if profile_image:
+                    st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>",
+                                unsafe_allow_html=True)
+            with col2:
+                if 'details' in project and 'build_updates' in project['details']:
+                    with st.expander(f"Build Updates (x {len(project['details']['build_updates'])})"):
+                        for update in project['details']['build_updates']:
+                            display_build_update(update)
+            st.markdown("---")
 
 
 
@@ -196,11 +194,11 @@ def rag_query():
         tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
 
         with tab1:
-            st.subheader("Top 3 members who match your search")
-            for member in top_members[:3]:
+            st.subheader("Top members who match your search")
+            for member in top_members[:20]:
                 display_member(member)
         with tab2:
-            st.subheader("Top 5 projects that match your search")
+            st.subheader("Top projects that match your search")
             unique_projects = set()
             for update in top_build_updates[:20]:
                 unique_projects.add(update['project_name'])
@@ -215,7 +213,7 @@ def rag_query():
                             print("Skipping member: No profile picture found.")
                             return
                         profile_image = get_image_base64(member['profile_picture'])
-                        for project_name in list(unique_projects)[:5]:
+                        for project_name in list(unique_projects)[:20]:
                           if project_name == project["project_name"]:
                               updates = project["details"]["build_updates"]
                               with st.expander(f"🚀 {project['project_name'].upper()} | By {member['name']}"):
@@ -234,7 +232,7 @@ def rag_query():
                                           display_build_update(update)
 
         with tab3:
-            st.subheader("Top 20 build updates who match your search")
+            st.subheader("Top build updates who match your search")
 
             for update in top_build_updates[:20]:
                 build_url = update.get("build_url", "")
@@ -312,6 +310,7 @@ def choose_data_type():
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shrmRqOBpHYhrOTsr">🚀 Start a new project!</a>',unsafe_allow_html=True)
 
         random.shuffle(members)
+        st.write("")
         for member in members:
           display_project(member)
 
