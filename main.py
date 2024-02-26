@@ -216,7 +216,7 @@ def rag_query():
                         for project_name in list(unique_projects)[:20]:
                           if project_name == project["project_name"]:
                               updates = project["details"]["build_updates"]
-                              with st.expander(f"🚀 {project['project_name'].upper()} | By {member['name']}"):
+                              with st.expander(f"🚀 {project['project_name'].upper()} | By {member['name']}", expanded=True):
                                   col1, col2 = st.columns([1, 3])
                                   with col1:
                                       if profile_image:
