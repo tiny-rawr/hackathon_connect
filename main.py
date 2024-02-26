@@ -82,7 +82,7 @@ def display_build_update(update):
     date = update["date"]
     build_url = update["build_url"].encode('utf-8', 'ignore').decode('utf-8')
     if date:
-        st.info(f"**{date}: **{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+        st.info(f"{date}: {update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
     else:
         st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n {build_url}")
 
@@ -146,9 +146,9 @@ def display_member(member):
                     for update in updates:
                         date = update["date"]
                         if date:
-                            st.info(f"**{update['date']}: 🚢 Build Update!**{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+                            st.info(f"{update['date']}: 🚢 Build Update!\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
                         else:
-                            st.info(f"**🚢 Build Update!**\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+                            st.info(f"🚢 Build Update!\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
 
 
     st.markdown("---")
@@ -286,7 +286,6 @@ def choose_data_type():
 
         with right_column:
             st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shr8C5KGPvBqPWkL2">👷‍ Apply to Build Club</a>',unsafe_allow_html=True)
-
 
         selected_skill = pills("Filter members by area of expertise:",
                                ["All", "AI Engineer", "Backend software dev", "Front end software dev",

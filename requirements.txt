@@ -1,0 +1,7 @@
+streamlit==0.90.0
+scikit-learn==0.24.2
+numpy==1.21.2
+streamlit-pandas-profiling==0.1.2
+streamlit-pandas-profiling==0.1.2
+streamlit_pills==0.1.0
+openai==0.11.3
