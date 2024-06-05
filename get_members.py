@@ -4,6 +4,8 @@ import os
 import requests
 import streamlit as st
 from openai import OpenAI
+import base64
+
 
 def get_records(table_name="Members", view_name=None):
     print(f"Retrieving {table_name.lower()}...")
@@ -94,9 +96,22 @@ def process_member(member, current_index, total_members):
         team_member_names = [project_fields["Name (from Team members)"][i] for i in range(len(project_fields["Team members"]))]
         project_text_representation = f"Name: {project_fields['Name']}, Notes: {project_fields['Notes']}, Team member names: {', '.join(team_member_names)}, Project name: {project_fields['Project name']}, What project does: {project_fields['Describe what your product solves in 2-3 scentences']}, Applicable bounty challenges: {', '.join(project_fields['Applicable bounty challenges'])}, City: {project_fields['City']}"
         project_embedding = create_embedding(project_text_representation)
+
+        # Download and encode video as base64
+        video_url = project_fields.get('3 minute demo video (describe the problem you are solving + walk through of solution build)', [{}])[0].get('url', '')
+        if video_url:
+            video_response = requests.get(video_url)
+            if video_response.ok:
+                video_base64 = base64.b64encode(video_response.content).decode('utf-8')
+            else:
+                print(f"Failed to download video for project ID {member_project['id']}")
+                video_base64 = ""
+        else:
+            video_base64 = ""
     else:
         project_text_representation = ""
         project_embedding = ""
+        video_base64 = ""
 
     member_data = {
         "id": member["id"],
@@ -113,7 +128,8 @@ def process_member(member, current_index, total_members):
         "member_text_representation": text_representation,
         "project_text_representation": project_text_representation,
         "project_details": member_project["fields"] if member_project else "",
-        "combined_embedding": create_embedding(f"{text_representation} {project_text_representation}")
+        "combined_embedding": create_embedding(f"{text_representation} {project_text_representation}"),
+        "video_base64": video_base64
     }
 
     return member_data

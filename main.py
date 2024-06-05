@@ -103,19 +103,15 @@ def display_project(project_details):
     st.write("---")  # Add a horizontal line separator
 
 def display_projects(members):
-    unique_projects = set()
     all_projects = []
 
     for member in members:
         if isinstance(member, dict) and 'project_details' in member:
             project_details = member['project_details']
-            if isinstance(project_details, dict):
-                project_name = project_details.get('Project name', '')
-                if project_name not in unique_projects:
-                    unique_projects.add(project_name)
-                    all_projects.append(project_details)
+            if isinstance(project_details, dict) and 'Project name' in project_details:
+                all_projects.append(project_details)
             else:
-                print(f"Skipping member: project_details is not a dictionary: {project_details}")
+                print(f"Skipping member: project_details is not a dictionary or missing 'Project name' key: {project_details}")
         else:
             print("Skipping member: No project details found.")
 
@@ -212,7 +208,7 @@ def rag_query():
     if submit:
         query_embedding = create_embedding(query)
 
-        top_members = retrieve_and_rank(query_embedding, members, 'member_embedding')
+        top_members = retrieve_and_rank(query_embedding, members, 'combined_embedding')
         top_build_updates = retrieve_and_rank_build_updates(query_embedding, members, 'build_update_embeddings')
 
         tab1, tab2 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS"])
@@ -223,37 +219,8 @@ def rag_query():
                 display_member(member)
         with tab2:
             st.subheader("Top projects that match your search")
-            unique_projects = set()
-            for update in top_build_updates[:20]:
-                unique_projects.add(update['project_name'])
-            for member in members:
-                if not isinstance(member, dict):
-                    print("Skipping member: Not a dictionary.")
-                    continue
-                projects = member.get("projects", [])
-                if projects:
-                    for project in projects:
-                        if not isinstance(member, dict) or 'profile_picture' not in member:
-                            print("Skipping member: No profile picture found.")
-                            return
-                        profile_image = get_image_base64(member['profile_picture'])
-                        for project_name in list(unique_projects)[:20]:
-                          if project_name == project["project_name"]:
-                              updates = project["details"]["build_updates"]
-                              with st.expander(f"🚀 {project['project_name'].upper()} | By {member['name']}", expanded=True):
-                                  col1, col2 = st.columns([1, 3])
-                                  with col1:
-                                      if profile_image:
-                                          st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>",
-                                                      unsafe_allow_html=True)
-                                  with col2:
-                                      st.subheader(project['project_name'])
-                                      st.markdown(f"By [{member['name']}]({member['linkedin_url']})")
-                                  if updates:
-                                      st.write("")
-                                      st.write(f"**Updates (x {len(updates)})**:")
-                                      for update in updates:
-                                          display_build_update(update)
+            for member in top_members[:20]:
+                display_projects(top_members[:20])
 
         return True
 
