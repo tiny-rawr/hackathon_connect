@@ -120,34 +120,40 @@ def display_member(member):
 
     name = member["name"]
     skills = member["areas_of_expertise"]
-    building = member.get('building', '').encode('utf-8', 'ignore').decode('utf-8')
-    past_work = member.get('past_work', '').encode('utf-8', 'ignore').decode('utf-8')
-    projects = member.get('projects', '')
+    bio = member.get('bio', '').encode('utf-8', 'ignore').decode('utf-8')
+    entry_type = member.get('entry_type', '').encode('utf-8', 'ignore').decode('utf-8')
+    industries = ', '.join(member.get('areas_of_expertise', [])).encode('utf-8', 'ignore').decode('utf-8')
+    weird_fact = member.get('dietary_requirements', '').encode('utf-8', 'ignore').decode('utf-8')
+    looking_for_team_members = member.get('looking_for_team_members', '').encode('utf-8', 'ignore').decode('utf-8')
+    team_members = []
+    if member.get('project_details'):
+        team_members_data = member['project_details'].get('Team members', [])
+        team_member_names = [get_member_name(team_member_id, members) for team_member_id in team_members_data]
+        team_members = [name.encode('utf-8', 'ignore').decode('utf-8') for name in team_member_names if name]
+
+    linkedin_url = member.get('linkedin_url', '')
+    if not linkedin_url:
+        linkedin_url = member.get('twitter_url', '')
 
     col1, col2 = st.columns([1, 3])
     with col1:
         if profile_image:
             st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<span>**<a class='linkedin_link' href='{member['linkedin_url']}'>{name}</a>**</span><br>", unsafe_allow_html=True)
+        st.markdown(f"<span>**<a class='linkedin_link' href='{linkedin_url}'>{name}</a>**</span><br>", unsafe_allow_html=True)
         skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
         st.markdown(skills_html, unsafe_allow_html=True)
-        st.write(f"**Currently Building:** {building}")
-        if past_work:
-          st.write(f"**Past Work:** {past_work}")
-        if projects:
-          st.write("**Projects:**")
-          for project in projects:
-              updates = project["details"]["build_updates"]
-              with st.expander(f"🚀 {project['project_name']}"):
-                  if updates:
-                    for update in updates:
-                        date = update["date"]
-                        if date:
-                            st.info(f"{update['date']}: 🚢 Build Update!\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
-                        else:
-                            st.info(f"🚢 Build Update!\n{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
+        st.write(f"**Bio:** {bio}")
+        if team_members:
+          st.write(f"**Team Members:** {', '.join(team_members)}")
+        st.write(f"**Looking for Team Members:** {looking_for_team_members}")
+    st.markdown("---")
 
+def get_member_name(member_id, members):
+    for member in members:
+        if member['id'] == member_id:
+            return member['name']
+    return None
 
     st.markdown("---")
 

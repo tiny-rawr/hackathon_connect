@@ -102,6 +102,7 @@ def process_member(member, current_index, total_members):
         "id": member["id"],
         "profile_picture": f"member_images/{member['id']}.png",
         "name": member_name,
+        "bio": member["fields"].get("Bio: Current professional role and why you want to enter", ""),
         "linkedin_url": member["fields"].get("What's the link to your LinkedIn?", ""),
         "twitter_url": member["fields"].get("Twitter", ""),
         "email": member["fields"].get("Email", ""),
