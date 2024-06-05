@@ -73,44 +73,62 @@ def display_header():
     with cent_co:
         st.image("logo.png")
 
-    st.markdown("<h1 style='text-align: center; margin-top: -1.5rem;'>Member Discovery</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-top: -1.5rem;'>Welcome to Build Zone!</h1>", unsafe_allow_html=True)
     st.markdown(
-        "<p style='text-align: center;'>Use this member search to discover other like-minded builders to connect with. You can also browse member projects and build updates to get an idea of what builders are shipping in real-time!</p>",
+        "<p style='text-align: center;'>Builders rise by lifting each other and to do this, you need to find each other. For the Build Together hackathon, we are launching the POC of this and can't wait to see what you do!</p>",
+        unsafe_allow_html=True)
+    st.markdown(
+        "<p style='text-align: center;'>Built with ❤️ and ☕️ by <a href='https://www.linkedin.com/in/becca9941/' target='_blank'>Becca</a> (would love feedback).</p>",
         unsafe_allow_html=True)
 
-def display_build_update(update):
-    date = update["date"]
-    build_url = update["build_url"].encode('utf-8', 'ignore').decode('utf-8')
-    if date:
-        st.info(f"{date}: {update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}")
-    else:
-        st.info(f"{update['build_update'].encode('utf-8', 'ignore').decode('utf-8')}\n {build_url}")
-
-
-def display_project(member):
-    if not isinstance(member, dict) or 'profile_picture' not in member:
-        print("Skipping member: No profile picture found.")
+def display_project(project_details):
+    if not isinstance(project_details, dict):
+        print("Skipping project: Invalid project details.")
         return
-    name = member["name"]
-    profile_image = get_image_base64(member['profile_picture'])
-    projects = member.get('projects', '')
-    if projects:
-        for project in projects:
-            st.markdown(f"🚀 **{project['project_name'].upper()}** | By [{name}]({member['linkedin_url']})")
 
-            col1, col2 = st.columns([1, 3])
-            with col1:
-                if profile_image:
-                    st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>",
-                                unsafe_allow_html=True)
-            with col2:
-                if 'details' in project and 'build_updates' in project['details']:
-                    with st.expander(f"Build Updates (x {len(project['details']['build_updates'])})"):
-                        for update in project['details']['build_updates']:
-                            display_build_update(update)
-            st.markdown("---")
+    project_name = project_details.get('Project name', '')
+    project_description = project_details.get('Describe what your product solves in 2-3 scentences', '')
+    applicable_bounties = project_details.get('Applicable bounty challenges', [])
+    team_members = project_details.get('Name (from Team members)', [])
+    team_emails = project_details.get('Email (from Email)', [])
+    video_url = project_details.get('3 minute demo video (describe the problem you are solving + walk through of solution build)', [{}])[0].get('url', '')
 
+    st.video(video_url)
+    st.write(f"**{project_name}**")
+    st.write(f"{project_description}")
 
+    if team_members:
+        st.write(f"**Team Members:** {', '.join(team_members)}")
+
+    st.write("---")  # Add a horizontal line separator
+
+def display_projects(members):
+    unique_projects = set()
+    all_projects = []
+
+    for member in members:
+        if isinstance(member, dict) and 'project_details' in member:
+            project_details = member['project_details']
+            if isinstance(project_details, dict):
+                project_name = project_details.get('Project name', '')
+                if project_name not in unique_projects:
+                    unique_projects.add(project_name)
+                    all_projects.append(project_details)
+            else:
+                print(f"Skipping member: project_details is not a dictionary: {project_details}")
+        else:
+            print("Skipping member: No project details found.")
+
+    num_projects = len(all_projects)
+    num_cols = 2  # Display 2 projects side by side
+
+    for i in range(0, num_projects, num_cols):
+        cols = st.columns(num_cols)
+        for j, col in enumerate(cols):
+            project_index = i + j
+            if project_index < num_projects:
+                with col:
+                    display_project(all_projects[project_index])
 
 def display_member(member):
     if not isinstance(member, dict) or 'profile_picture' not in member:
@@ -197,7 +215,7 @@ def rag_query():
         top_members = retrieve_and_rank(query_embedding, members, 'member_embedding')
         top_build_updates = retrieve_and_rank_build_updates(query_embedding, members, 'build_update_embeddings')
 
-        tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
+        tab1, tab2 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS"])
 
         with tab1:
             st.subheader("Top members who match your search")
@@ -237,23 +255,6 @@ def rag_query():
                                       for update in updates:
                                           display_build_update(update)
 
-        with tab3:
-            st.subheader("Top build updates who match your search")
-
-            for update in top_build_updates[:20]:
-                build_url = update.get("build_url", "")
-                project_name = update.get("project_name", "")
-                build_update_data = update.get("build_update", {})
-                member_name = update.get("member_name", "")
-                member_picture = update.get("member_picture", "")
-
-                build_update = build_update_data.get("build_update", "").encode('utf-8', 'ignore').decode('utf-8')
-                build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
-
-                st.markdown(
-                    f"<section class='build-update'><span><div class='image-container-small'><img src='{member_picture}'> <a href='{update.get('linkedin_url', '')}'>By {member_name}</a> in {project_name}</span></div><p>{build_update}</p><p>{build_url}</p></section>",
-                    unsafe_allow_html=True)
-
         return True
 
     return False
@@ -290,18 +291,18 @@ def paginate_members(members):
 
 def choose_data_type():
     st.write("")
-    tab1, tab2, tab3 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS", "🎯️ BUILD UPDATES"])
+    tab1, tab2 = st.tabs(["👩‍💻 BUILDERS", "🚀 PROJECTS"])
 
     with tab1:
         left_column, right_column = st.columns([2, 1])
 
         with left_column:
-            st.subheader("Build Club Members")
+            st.subheader("Build Zone")
 
         with right_column:
-            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shr8C5KGPvBqPWkL2">👷‍ Apply to Build Club</a>',unsafe_allow_html=True)
+            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://join.slack.com/t/buildtogether-x1i6405/shared_invite/zt-2k0ev4aj8-KezF5NrYieTUBBmJY_DX_A">🚀 Go to the Slack!</a>',unsafe_allow_html=True)
 
-        selected_skill = pills("Filter members by area of expertise:",
+        selected_skill = pills("Connect with other Hackathon participants, find your next build mate:",
                        ["All", "AI Engineer", "Backend Engineer", "Frontend Engineer", "GTM", "Generalist", "Product manager", "Designer", "Domain expert", "IOS/App", "RAG", "DevTools", "Opensource", "Image/Multi-madel", "Ai Agents"],
                        ["🌐", "🤖", "🖥️", "💻", "📈", "🛠️", "📋", "🎨", "📚", "📱", "🔎", "🛠️", "🌍", "🖼️", "👾"], key="selected_skills")
 
@@ -325,41 +326,7 @@ def choose_data_type():
 
         random.shuffle(members)
         st.write("")
-        for member in members:
-          display_project(member)
-
-    with tab3:
-        left_column, right_column = st.columns([2, 1])
-
-        with left_column:
-            st.subheader("Build Club Updates")
-
-        with right_column:
-            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shreowTFIVXILrfN5">🚢 Ship a build update!</a>',unsafe_allow_html=True)
-
-        random.shuffle(members)
-
-        for member in members:
-            if not isinstance(member, dict) or 'profile_picture' not in member:
-                print("Skipping member: No profile picture found.")
-                continue
-
-            projects = member.get("projects", [])
-            profile_image = get_image_base64(member.get('profile_picture', ''))
-
-            for project in projects:
-                updates = project.get("details", {}).get("build_updates", [])
-                if updates:
-                    for update in updates:
-                        build_url = update.get("build_url", "")
-                        build_update = update.get("build_update", "")
-
-                        build_update = build_update.encode('utf-8', 'ignore').decode('utf-8')
-                        build_url = build_url.encode('utf-8', 'ignore').decode('utf-8')
-
-                        st.markdown(
-                            f"<section class='build-update'><span><div class='image-container-small'><img src='{profile_image}'> <a href='{member.get('linkedin_url', '')}'>By {member.get('name', '')}</a></span></div><p>{build_update}</p><p>{build_url}</p></section>",
-                            unsafe_allow_html=True)
+        display_projects(members)
 
 
 def main():
