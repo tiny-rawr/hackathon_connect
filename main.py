@@ -78,7 +78,7 @@ def display_header():
         "<p style='text-align: center;'>Builders rise by lifting each other and to do this, you need to find each other. For the Build Together hackathon, we are launching the POC of this and can't wait to see what you do!</p>",
         unsafe_allow_html=True)
     st.markdown(
-        "<p style='text-align: center;'>Built with ❤️ and ☕️ by <a href='https://www.linkedin.com/in/becca9941/' target='_blank'>Becca</a> (would love feedback).</p>",
+        "<p style='text-align: center;'>Built with ❤️ and ☕️ by <a href='https://www.linkedin.com/in/becca9941/' target='_blank'>Becca</a> (beta version).</p>",
         unsafe_allow_html=True)
 
 def display_project(project_details):
@@ -202,7 +202,7 @@ def retrieve_and_rank_build_updates(query_embedding, members, embedding_key):
 
 
 def rag_query():
-    query = st.text_area("", placeholder="🔍 Search members by asking things like: 'Who's working in law?', 'Who is passionate about RAG?'")
+    query = st.text_area("", placeholder="🔍 Search for hackathon members:'Who works in education?', 'GTM strategies?'")
     submit = st.button("Search")
 
     if submit:
