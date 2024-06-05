@@ -319,10 +319,10 @@ def choose_data_type():
         left_column, right_column = st.columns([2, 1])
 
         with left_column:
-            st.subheader("Build Club Projects")
+            st.subheader("Hackathon Projects")
 
         with right_column:
-            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://airtable.com/app8eQNdrRqlHBvSi/shrmRqOBpHYhrOTsr">🚀 Start a new project!</a>',unsafe_allow_html=True)
+            st.markdown('<a style="float: right; background-color: #1765FF; color: white; padding: 8px 12px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;" href="https://join.slack.com/t/buildtogether-x1i6405/shared_invite/zt-2k0ev4aj8-KezF5NrYieTUBBmJY_DX_A">🚀 Go to the Slack!</a>',unsafe_allow_html=True)
 
         random.shuffle(members)
         st.write("")
