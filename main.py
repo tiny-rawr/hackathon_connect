@@ -259,6 +259,10 @@ def paginate_members(members):
     items_per_page = 20
     total_pages = (len(members) - 1) // items_per_page + 1
 
+    # Ensure the page number is within the valid range
+    if st.session_state.page_number > total_pages:
+        st.session_state.page_number = total_pages
+
     start_idx = (st.session_state.page_number - 1) * items_per_page
     end_idx = start_idx + items_per_page
     displayed_members = members[start_idx:end_idx]
@@ -266,9 +270,15 @@ def paginate_members(members):
     for member in displayed_members:
         display_member(member)
 
-    page_number = st.slider("Pages (20 members per page):", 1, total_pages, st.session_state.page_number)
+    # Use a min and max value to constrain the slider within valid limits
+    page_number = None  # Initialize page_number as None
+    if total_pages > 1:
+        page_number = st.slider("Pages (20 members per page):", min_value=1, max_value=total_pages, value=st.session_state.page_number)
+    else:
+        # If there is only one page, don't show the slider
+        st.write(f"Page 1 of {total_pages}")
 
-    if st.session_state.page_number != page_number:
+    if page_number is not None and st.session_state.page_number != page_number:
         st.session_state.page_number = page_number
         st.experimental_rerun()
 

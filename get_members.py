@@ -5,21 +5,20 @@ import requests
 import streamlit as st
 from openai import OpenAI
 
-
-def get_members(view_name=None):
-    print("Retrieving members...")
+def get_records(table_name="Members", view_name=None):
+    print(f"Retrieving {table_name.lower()}...")
     access_token = st.secrets["airtable"]["personal_access_token"]
-    url = "https://api.airtable.com/v0/app8eQNdrRqlHBvSi/Members"
+    url = f"https://api.airtable.com/v0/appdxzy7MxhBwI8WY/{table_name}"
     headers = {"Authorization": f"Bearer {access_token}"}
     params = {} if view_name is None else {"view": view_name}
-    members = []
+    items = []
     while True:
         res = requests.get(url, headers=headers, params=params).json()
-        members += res.get("records", [])
+        items += res.get("records", [])
         if "offset" not in res:
             break
         params["offset"] = res["offset"]
-    return members
+    return items
 
 
 def get_build_updates(view_name=None):
@@ -106,6 +105,7 @@ def process_member(member, current_index, total_members):
     save_member_image(member)
     member_name = member["fields"]["Name"]
     updates = get_build_updates()
+    projects = get_records("Projects")
     building = member["fields"].get("What will you build", "")
     past_work = member["fields"].get("Past work", "")
     text_representation = f"Name: {member_name}, currently building: {building}, past work: {past_work}"
@@ -159,7 +159,7 @@ def process_member(member, current_index, total_members):
 
 
 if __name__ == "__main__":
-    members = get_members("Accepted only")
+    members = get_records("Members")
     total_members = len(members)
     print(f"Total members to process: {total_members}")
 
