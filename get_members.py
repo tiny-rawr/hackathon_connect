@@ -20,31 +20,13 @@ def get_records(table_name="Members", view_name=None):
         params["offset"] = res["offset"]
     return items
 
-
-def get_build_updates(view_name=None):
-    print("Retrieving build updates...")
-    access_token = st.secrets["airtable"]["personal_access_token"]
-    url = "https://api.airtable.com/v0/app8eQNdrRqlHBvSi/Build Updates"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    params = {} if view_name is None else {"view": view_name}
-    updates = []
-    while True:
-        res = requests.get(url, headers=headers, params=params).json()
-        updates += res.get("records", [])
-        if "offset" not in res:
-            break
-        params["offset"] = res["offset"]
-    return updates
-
-
-def create_embedding(member_text):
+def create_embedding(text):
     client = OpenAI(api_key=st.secrets["openai"]["api_key"])
     response = client.embeddings.create(
-        input=member_text,
+        input=text,
         model="text-embedding-3-small"
     )
     return response.data[0].embedding
-
 
 def save_member_image(member):
     member_fields = member["fields"]
@@ -90,12 +72,9 @@ def save_members(new_members_to_process):
     else:
         print("No new members to process.")
 
-
-
 def find_new_members(updated_members, existing_members_ids):
     new_members_to_process = [member for member in updated_members if member["id"] not in existing_members_ids]
     return new_members_to_process
-
 
 def process_member(member, current_index, total_members):
     if "Name" not in member["fields"] or not member["fields"]["Name"]:
@@ -104,59 +83,39 @@ def process_member(member, current_index, total_members):
 
     save_member_image(member)
     member_name = member["fields"]["Name"]
-    updates = get_build_updates()
     projects = get_records("Projects")
-    building = member["fields"].get("What will you build", "")
-    past_work = member["fields"].get("Past work", "")
-    text_representation = f"Name: {member_name}, currently building: {building}, past work: {past_work}"
 
-    member_updates = [update for update in updates if member_name.lower() in update["fields"].get("Full name", "").lower()]
+    text_representation = f"Name: {member_name}, Areas of Expertise: {member['fields'].get('What are your areas of expertise and interest?', '')}, Entry Type: {member['fields'].get('Team or individual entry type', '')}, Looking for Team Members: {member['fields'].get('Looking for more team members?', '')}, Dietary Requirements: {member['fields'].get('Dietary requirements', '')}"
 
-    total_updates = len(member_updates)
-    print(f"Processing {total_updates} build updates for member: {member_name}")
-    print(f"Currently processing member {current_index} out of {total_members}")
+    member_project = next((project for project in projects if member["id"] in project["fields"]["Team members"]), None)
 
-    member_projects = {}
+    if member_project:
+        project_fields = member_project["fields"]
+        team_member_names = [project_fields["Name (from Team members)"][i] for i in range(len(project_fields["Team members"]))]
+        project_text_representation = f"Name: {project_fields['Name']}, Notes: {project_fields['Notes']}, Team member names: {', '.join(team_member_names)}, Project name: {project_fields['Project name']}, What project does: {project_fields['Describe what your product solves in 2-3 scentences']}, Applicable bounty challenges: {', '.join(project_fields['Applicable bounty challenges'])}, City: {project_fields['City']}"
+        project_embedding = create_embedding(project_text_representation)
+    else:
+        project_text_representation = ""
+        project_embedding = ""
 
-    for idx, update in enumerate(member_updates, start=1):
-        print(f"Processing update {idx} out of {total_updates}")
-
-        project_name = update["fields"].get("Project", update["fields"].get("😊 Build project name", ""))
-        if not project_name:
-            continue
-
-        if project_name not in member_projects:
-            member_projects[project_name] = {"build_updates": []}
-
-        clean_update_data = {
-            "member_id": member["id"],
-            "date": update["fields"].get("Build update date", ""),
-            "build_update": update["fields"].get("🏗 Build goal for week", ""),
-            "build_url": update["fields"].get("🚢 Build URL", ""),
-            "asks": update["fields"].get("Would you like to submit a help request or have any asks from community?", ""),
-            "customers_talked_to": update["fields"].get("How many customers did you test with this week?", ""),
-            "milestones": update["fields"].get("Did you reach a key milestone you want to share?", "")
-        }
-
-        clean_update_data["build_update_embeddings"] = create_embedding(clean_update_data["build_update"])
-
-        member_projects[project_name]["build_updates"].append(clean_update_data)
-
-    projects_array = [{"project_name": project, "details": details} for project, details in member_projects.items()]
-
-    return {
+    member_data = {
         "id": member["id"],
         "profile_picture": f"member_images/{member['id']}.png",
         "name": member_name,
-        "building": building,
-        "past_work": past_work,
         "linkedin_url": member["fields"].get("What's the link to your LinkedIn?", ""),
-        "areas_of_expertise": member["fields"].get("What are your areas of expertise you have (select max 4 please)", ""),
+        "twitter_url": member["fields"].get("Twitter", ""),
+        "email": member["fields"].get("Email", ""),
+        "areas_of_expertise": member["fields"].get("What are your areas of expertise and interest?", ""),
+        "entry_type": member["fields"].get("Team or individual entry type", ""),
+        "looking_for_team_members": member["fields"].get("Looking for more team members?", ""),
+        "dietary_requirements": member["fields"].get("Dietary requirements", ""),
         "member_text_representation": text_representation,
-        "member_embedding": create_embedding(text_representation),
-        "projects": projects_array
+        "project_text_representation": project_text_representation,
+        "project_details": member_project["fields"] if member_project else "",
+        "combined_embedding": create_embedding(f"{text_representation} {project_text_representation}")
     }
 
+    return member_data
 
 if __name__ == "__main__":
     members = get_records("Members")
@@ -165,18 +124,15 @@ if __name__ == "__main__":
 
     existing_members_ids = set()
 
-    
     try:
-      with open("members.py", "r") as file:
-        data = file.read()
-        members_dict = {}
-        exec(data, members_dict)
-        existing_members = members_dict.get("members", [])
-        existing_members_ids = set(member["id"] for member in existing_members if isinstance(member, dict))
+        with open("members.py", "r") as file:
+            data = file.read()
+            members_dict = {}
+            exec(data, members_dict)
+            existing_members = members_dict.get("members", [])
+            existing_members_ids = set(member["id"] for member in existing_members if isinstance(member, dict))
     except FileNotFoundError:
-      existing_members_ids = set()
-
-
+        existing_members_ids = set()
 
     new_members_to_process = find_new_members(members, existing_members_ids)
 
