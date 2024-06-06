@@ -8,6 +8,14 @@ import os
 from streamlit_pills import pills
 import random
 
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+
 def get_image_base64(path):
     if os.path.exists(path):
         with open(path, "rb") as image_file:
