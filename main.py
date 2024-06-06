@@ -81,7 +81,7 @@ def display_header():
     with cent_co:
         st.image("logo.png")
 
-    st.markdown("<h1 style='text-align: center; margin-top: -1.5rem;'>Welcome to Build Zone!</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; margin-top: -1.5rem;'>Welcome to Build Zone</h1>", unsafe_allow_html=True)
     st.markdown(
         "<p style='text-align: center;'>Builders rise by lifting each other and to do this, you need to find each other. For the Build Together hackathon, we are launching the POC of this and can't wait to see what you do!</p>",
         unsafe_allow_html=True)
