@@ -87,7 +87,7 @@ def process_member(member, current_index, total_members):
     member_name = member["fields"]["Name"]
     projects = get_records("Projects")
 
-    text_representation = f"Name: {member_name}, Areas of Expertise: {member['fields'].get('What are your areas of expertise and interest?', '')}, Entry Type: {member['fields'].get('Team or individual entry type', '')}, Looking for Team Members: {member['fields'].get('Looking for more team members?', '')}, Dietary Requirements: {member['fields'].get('Dietary requirements', '')}, City: {', '.join(member["fields"].get('Which City are you participating from?', []))}"
+    text_representation = f"Name: {member_name}, Areas of Expertise: {member['fields'].get('What are your areas of expertise and interest?', '')}, Entry Type: {member['fields'].get('Team or individual entry type', '')}, Looking for Team Members: {member['fields'].get('Looking for more team members?', '')}, Dietary Requirements: {member['fields'].get('Dietary requirements', '')}, City: {member['fields'].get('Which City are you participating from?', '')}"
 
     member_project = next((project for project in projects if member["id"] in project["fields"]["Team members"]), None)
 
