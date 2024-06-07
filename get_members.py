@@ -94,7 +94,7 @@ def process_member(member, current_index, total_members):
     if member_project:
         project_fields = member_project["fields"]
         team_member_names = [project_fields["Name (from Team members)"][i] for i in range(len(project_fields["Team members"]))]
-        project_text_representation = f"Name: {project_fields['Name']}, Notes: {project_fields['Notes']}, Team member names: {', '.join(team_member_names)}, Project name: {project_fields['Project name']}, What project does: {project_fields['Describe what your product solves in 2-3 scentences']}, Applicable bounty challenges: {', '.join(project_fields['Applicable bounty challenges'])}, City: {project_fields['City']}"
+        project_text_representation = f"Name: {project_fields['Name']}, Notes: {project_fields['Notes']}, Team member names: {', '.join(team_member_names)}, Project name: {project_fields['Project name']}, What project does: {project_fields['Describe what your product solves in 2-3 scentences']}, Applicable bounty challenges: {', '.join(project_fields['Applicable bounty challenges'])}"
         project_embedding = create_embedding(project_text_representation)
 
         # Download and encode video as base64
