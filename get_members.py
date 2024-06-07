@@ -94,7 +94,15 @@ def process_member(member, current_index, total_members):
     if member_project:
         project_fields = member_project["fields"]
         team_member_names = [project_fields["Name (from Team members)"][i] for i in range(len(project_fields["Team members"]))]
-        project_text_representation = f"Name: {project_fields['Name']}, Notes: {project_fields['Notes']}, Team member names: {', '.join(team_member_names)}, Project name: {project_fields['Project name']}, What project does: {project_fields['Describe what your product solves in 2-3 scentences']}, Applicable bounty challenges: {', '.join(project_fields['Applicable bounty challenges'])}"
+        project_text_representation = (
+          f"Name: {project_fields.get('Name', 'N/A')}, "
+          f"Notes: {project_fields.get('Notes', 'N/A')}, "
+          f"Team member names: {', '.join(team_member_names)}, "
+          f"Project name: {project_fields.get('Project name', 'N/A')}, "
+          f"What project does: {project_fields.get('Describe what your product solves in 2-3 scentences', 'N/A')}, "
+          f"Applicable bounty challenges: {', '.join(project_fields.get('Applicable bounty challenges', []))}, "
+          f"City: {', '.join(project_fields.get('Which City are you participating from?', []))}"
+        )
         project_embedding = create_embedding(project_text_representation)
 
         # Download and encode video as base64
@@ -128,6 +136,7 @@ def process_member(member, current_index, total_members):
         "member_text_representation": text_representation,
         "project_text_representation": project_text_representation,
         "project_details": member_project["fields"] if member_project else "",
+        "city": member["fields"].get("Which City are you participating from?", ""),
         "combined_embedding": create_embedding(f"{text_representation} {project_text_representation}"),
         "video_base64": video_base64
     }

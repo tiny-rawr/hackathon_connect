@@ -142,16 +142,17 @@ def display_member(member):
 
     name = member["name"]
     skills = member["areas_of_expertise"]
-    bio = member.get('bio', '').encode('utf-8', 'ignore').decode('utf-8')
-    entry_type = member.get('entry_type', '').encode('utf-8', 'ignore').decode('utf-8')
+    bio = member.get('bio', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
+    entry_type = member.get('entry_type', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
     industries = ', '.join(member.get('areas_of_expertise', [])).encode('utf-8', 'ignore').decode('utf-8')
-    weird_fact = member.get('dietary_requirements', '').encode('utf-8', 'ignore').decode('utf-8')
-    looking_for_team_members = member.get('looking_for_team_members', '').encode('utf-8', 'ignore').decode('utf-8')
+    weird_fact = member.get('dietary_requirements', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
+    looking_for_team_members = member.get('looking_for_team_members', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
     team_members = []
     if member.get('project_details'):
         team_members_data = member['project_details'].get('Team members', [])
         team_member_names = [get_member_name(team_member_id, members) for team_member_id in team_members_data]
         team_members = [name.encode('utf-8', 'ignore').decode('utf-8') for name in team_member_names if name]
+    city = member.get('city', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
 
     linkedin_url = member.get('linkedin_url', '')
     if not linkedin_url:
@@ -169,6 +170,8 @@ def display_member(member):
         if team_members:
           st.write(f"**Team Members:** {', '.join(team_members)}")
         st.write(f"**Looking for Team Members:** {looking_for_team_members}")
+        if city:
+          st.write(f"**City:** {city}")
     st.markdown("---")
 
 def get_member_name(member_id, members):
