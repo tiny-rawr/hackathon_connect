@@ -87,7 +87,7 @@ def process_member(member, current_index, total_members):
     member_name = member["fields"]["Name"]
     projects = get_records("Projects")
 
-    text_representation = f"Name: {member_name}, Areas of Expertise: {member['fields'].get('What are your areas of expertise and interest?', '')}, Entry Type: {member['fields'].get('Team or individual entry type', '')}, Looking for Team Members: {member['fields'].get('Looking for more team members?', '')}, Dietary Requirements: {member['fields'].get('Dietary requirements', '')}"
+    text_representation = f"Name: {member_name}, Areas of Expertise: {member['fields'].get('What are your areas of expertise and interest?', '')}, Entry Type: {member['fields'].get('Team or individual entry type', '')}, Looking for Team Members: {member['fields'].get('Looking for more team members?', '')}, Dietary Requirements: {member['fields'].get('Dietary requirements', '')}, City: {', '.join(member["fields"].get('Which City are you participating from?', []))}"
 
     member_project = next((project for project in projects if member["id"] in project["fields"]["Team members"]), None)
 
@@ -101,7 +101,6 @@ def process_member(member, current_index, total_members):
           f"Project name: {project_fields.get('Project name', 'N/A')}, "
           f"What project does: {project_fields.get('Describe what your product solves in 2-3 scentences', 'N/A')}, "
           f"Applicable bounty challenges: {', '.join(project_fields.get('Applicable bounty challenges', []))}, "
-          f"City: {', '.join(project_fields.get('Which City are you participating from?', []))}"
         )
         project_embedding = create_embedding(project_text_representation)
 
