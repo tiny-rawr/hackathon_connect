@@ -7,6 +7,7 @@ import base64
 import os
 from streamlit_pills import pills
 import random
+import re
 
 hide_streamlit_style = """
             <style>
@@ -134,6 +135,18 @@ def display_projects(members):
                 with col:
                     display_project(all_projects[project_index])
 
+def is_valid_url(url):
+    # Regular expression to validate a URL
+    regex = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # domain...
+        r'localhost|' # localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|' # ...or ipv4
+        r'\[?[A-F0-9]*:[A-F0-9:]+\]?)' # ...or ipv6
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+    return re.match(regex, url) is not None
+
 def display_member(member):
     if not isinstance(member, dict) or 'profile_picture' not in member:
         print("Skipping member: No profile picture found.")
@@ -155,15 +168,25 @@ def display_member(member):
     city = member.get('city', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
 
     linkedin_url = member.get('linkedin_url', '')
-    if not linkedin_url:
-        linkedin_url = member.get('twitter_url', '')
+    twitter_url = member.get('twitter_url', '')
+
+    # Validate URLs
+    valid_linkedin = is_valid_url(linkedin_url)
+    valid_twitter = is_valid_url(twitter_url)
+
+    # Use Twitter URL if LinkedIn URL is not provided or invalid
+    url = linkedin_url if valid_linkedin else (twitter_url if valid_twitter else '')
 
     col1, col2 = st.columns([1, 3])
     with col1:
         if profile_image:
             st.markdown(f"<div class='image-container'><img src='{profile_image}'></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown(f"<span>**<a class='linkedin_link' href='{linkedin_url}'>{name}</a>**</span><br>", unsafe_allow_html=True)
+        if url:  # Only create the link if either LinkedIn or Twitter URL is present and valid
+            st.markdown(f"<span>**<a class='linkedin_link' href='{url}'>{name}</a>**</span><br>", unsafe_allow_html=True)
+        else:
+            st.markdown(f"<span>**{name}**</span><br>", unsafe_allow_html=True)
+
         skills_html = ''.join([f"<span class='skill-chip'>{skill}</span>" for skill in skills])
         st.markdown(skills_html, unsafe_allow_html=True)
         st.write(f"**Bio:** {bio}")
