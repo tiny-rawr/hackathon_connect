@@ -5,7 +5,14 @@ import requests
 import streamlit as st
 from openai import OpenAI
 import base64
+import re
 
+def is_valid_url(url):
+    """
+    Checks if the given string is a valid URL.
+    """
+    url_pattern = r'^https?://'  # Regular expression pattern for valid URL scheme
+    return bool(re.match(url_pattern, url))
 
 def get_records(table_name="Members", view_name=None):
     print(f"Retrieving {table_name.lower()}...")
@@ -20,6 +27,25 @@ def get_records(table_name="Members", view_name=None):
         if "offset" not in res:
             break
         params["offset"] = res["offset"]
+    return items
+
+def get_projects(table_name="Table%201", view_name=None):
+    print(f"Retrieving {table_name.lower()}...")
+    access_token = st.secrets["airtable"]["projects_pat"]
+    url = f"https://api.airtable.com/v0/appiKSYuNfWfcwigQ/Table%201?view=all"
+    headers = {"Authorization": f"Bearer {access_token}"}
+    params = {"view": view_name} if view_name else {}
+    items = []
+
+    while True:
+        res = requests.get(url, headers=headers, params=params).json()
+        items += res.get("records", [])
+
+        if "offset" not in res:
+            break
+
+        params["offset"] = res["offset"]
+
     return items
 
 def create_embedding(text):
@@ -85,40 +111,36 @@ def process_member(member, current_index, total_members):
 
     save_member_image(member)
     member_name = member["fields"]["Name"]
-    projects = get_records("Projects")
+    projects = get_projects()
 
     text_representation = f"Name: {member_name}, Areas of Expertise: {member['fields'].get('What are your areas of expertise and interest?', '')}, Entry Type: {member['fields'].get('Team or individual entry type', '')}, Looking for Team Members: {member['fields'].get('Looking for more team members?', '')}, Dietary Requirements: {member['fields'].get('Dietary requirements', '')}, City: {member['fields'].get('Which City are you participating from?', '')}"
 
-    member_project = next((project for project in projects if member["id"] in project["fields"]["Team members"]), None)
+    member_project = next((project for project in projects if "Team member emails (separate by comma)" in project["fields"] and member["fields"]["Email"] in project["fields"]["Team member emails (separate by comma)"]), None)
+    video_base64 = ""
+    project_text_representation = ""
+    project_fields = {}  # Initialize project_fields
 
     if member_project:
         project_fields = member_project["fields"]
-        team_member_names = [project_fields["Name (from Team members)"][i] for i in range(len(project_fields["Team members"]))]
         project_text_representation = (
-          f"Name: {project_fields.get('Name', 'N/A')}, "
-          f"Notes: {project_fields.get('Notes', 'N/A')}, "
-          f"Team member names: {', '.join(team_member_names)}, "
-          f"Project name: {project_fields.get('Project name', 'N/A')}, "
-          f"What project does: {project_fields.get('Describe what your product solves in 2-3 scentences', 'N/A')}, "
-          f"Applicable bounty challenges: {', '.join(project_fields.get('Applicable bounty challenges', []))}, "
+            f"Name: {project_fields.get('Team name', 'N/A')}, "
+            f"Team members: {project_fields.get('Team members', 'N/A')}, "
+            f"City: {project_fields.get('City', 'N/A')}, "
+            f"Overview: {project_fields.get('2-3 sentence overview of build', 'N/A')}, "
+            f"Demo: {project_fields.get('Link to recorded demo (City Finals)', 'N/A')}, "
+            f"Github: {project_fields.get('Link to github or platform sharable link e.g., Relevance AI URL, Github repo', 'N/A')}, "
         )
-        project_embedding = create_embedding(project_text_representation)
 
         # Download and encode video as base64
-        video_url = project_fields.get('3 minute demo video (describe the problem you are solving + walk through of solution build)', [{}])[0].get('url', '')
-        if video_url:
+        video_url = project_fields.get('Link to recorded demo (City Finals)', '')
+        if is_valid_url(video_url):
             video_response = requests.get(video_url)
             if video_response.ok:
                 video_base64 = base64.b64encode(video_response.content).decode('utf-8')
             else:
                 print(f"Failed to download video for project ID {member_project['id']}")
-                video_base64 = ""
         else:
-            video_base64 = ""
-    else:
-        project_text_representation = ""
-        project_embedding = ""
-        video_base64 = ""
+            print(f"Invalid video URL: {video_url}")
 
     member_data = {
         "id": member["id"],
@@ -134,7 +156,14 @@ def process_member(member, current_index, total_members):
         "dietary_requirements": member["fields"].get("Dietary requirements", ""),
         "member_text_representation": text_representation,
         "project_text_representation": project_text_representation,
-        "project_details": member_project["fields"] if member_project else "",
+        "project_details": {
+            "Name": project_fields.get('Team name', 'N/A'),
+            "Team members": project_fields.get('Team members', 'N/A'),
+            "City": project_fields.get('City', 'N/A'),
+            "Overview": project_fields.get('2-3 sentence overview of build', 'N/A'),
+            "Demo": project_fields.get('Link to recorded demo (City Finals)', 'N/A'),
+            "Github": project_fields.get('Link to github or platform sharable link e.g., Relevance AI URL, Github repo', 'N/A')
+        },
         "city": member["fields"].get("Which City are you participating from?", ""),
         "combined_embedding": create_embedding(f"{text_representation} {project_text_representation}"),
         "video_base64": video_base64

@@ -91,24 +91,32 @@ def display_header():
         unsafe_allow_html=True)
 
 def display_project(project_details):
-    if not isinstance(project_details, dict):
+    if not isinstance(project_details, dict) or not project_details:
         print("Skipping project: Invalid project details.")
         return
 
-    project_name = project_details.get('Project name', '')
-    project_description = project_details.get('Describe what your product solves in 2-3 scentences', '')
-    applicable_bounties = project_details.get('Applicable bounty challenges', [])
-    team_members = project_details.get('Name (from Team members)', [])
-    team_emails = project_details.get('Email (from Email)', [])
-    video_url = project_details.get('3 minute demo video (describe the problem you are solving + walk through of solution build)', [{}])[0].get('url', '')
+    project_name = project_details.get('Name', '')
+    team_members = project_details.get('Team members', '')
+    city = project_details.get('City', '')
+    overview = project_details.get('overview', '')
+    demo_link = project_details.get('Demo', '')
+    github_link = project_details.get('Github', '')
 
-    st.video(video_url)
     st.write(f"**{project_name}**")
-    st.write(f"{project_description}")
+    st.write(f"{overview}")
 
     if team_members:
-        st.write(f"**Team Members:** {', '.join(team_members)}")
+        st.write(f"**Team Members:** {team_members}")
 
+    st.write(f"**City:** {city}")
+
+    # Display demo link if available
+    if demo_link and demo_link.startswith('https:'):
+        st.video(demo_link)
+    else:
+        st.write(f"**Demo Link:** Not available")
+
+    st.write(f"**GitHub:** {github_link}")
     st.write("---")  # Add a horizontal line separator
 
 def display_projects(members):
@@ -117,10 +125,12 @@ def display_projects(members):
     for member in members:
         if isinstance(member, dict) and 'project_details' in member:
             project_details = member['project_details']
-            if isinstance(project_details, dict) and 'Project name' in project_details:
-                all_projects.append(project_details)
+            if isinstance(project_details, dict):
+                demo_link = project_details.get('Demo', '')
+                if demo_link and demo_link.startswith('https:'):
+                    all_projects.append(project_details)
             else:
-                print(f"Skipping member: project_details is not a dictionary or missing 'Project name' key: {project_details}")
+                print(f"Skipping member: project_details is not a dictionary: {project_details}")
         else:
             print("Skipping member: No project details found.")
 
@@ -155,17 +165,17 @@ def display_member(member):
 
     name = member["name"]
     skills = member["areas_of_expertise"]
-    bio = member.get('bio', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
-    entry_type = member.get('entry_type', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
+    bio = member.get('bio', '').encode('utf-8', 'ignore').decode('utf-8')
+    entry_type = member.get('entry_type', '').encode('utf-8', 'ignore').decode('utf-8')
     industries = ', '.join(member.get('areas_of_expertise', [])).encode('utf-8', 'ignore').decode('utf-8')
-    weird_fact = member.get('dietary_requirements', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
-    looking_for_team_members = member.get('looking_for_team_members', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
+    weird_fact = member.get('dietary_requirements', '').encode('utf-8', 'ignore').decode('utf-8')
+    looking_for_team_members = member.get('looking_for_team_members', '').encode('utf-8', 'ignore').decode('utf-8')
     team_members = []
     if member.get('project_details'):
         team_members_data = member['project_details'].get('Team members', [])
         team_member_names = [get_member_name(team_member_id, members) for team_member_id in team_members_data]
         team_members = [name.encode('utf-8', 'ignore').decode('utf-8') for name in team_member_names if name]
-    city = member.get('city', 'N/A').encode('utf-8', 'ignore').decode('utf-8')
+    city = member.get('city', '').encode('utf-8', 'ignore').decode('utf-8')
 
     linkedin_url = member.get('linkedin_url', '')
     twitter_url = member.get('twitter_url', '')
