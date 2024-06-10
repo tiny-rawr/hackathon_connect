@@ -126,7 +126,7 @@ def display_projects(members):
         if isinstance(member, dict) and 'project_details' in member:
             project_details = member['project_details']
             if isinstance(project_details, dict):
-                demo_link = project_details.get('Demo', '')
+                demo_link = project_details.get('Demo', '').strip()
                 if demo_link and demo_link.startswith('https:'):
                     all_projects.append(project_details)
             else:
