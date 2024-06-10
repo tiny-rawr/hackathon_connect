@@ -112,7 +112,10 @@ def display_project(project_details):
 
     # Display demo link if available
     if demo_link and demo_link.startswith('https:'):
-        st.video(demo_link)
+        try:
+          st.video(demo_link)
+        except:
+            st.write(demo_link)
     else:
         st.write(f"**Demo Link:** Not available")
 
