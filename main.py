@@ -98,7 +98,7 @@ def display_project(project_details):
     project_name = project_details.get('Name', '')
     team_members = project_details.get('Team members', '')
     city = project_details.get('City', '')
-    overview = project_details.get('overview', '')
+    overview = project_details.get('Overview', '')
     demo_link = project_details.get('Demo', '')
     github_link = project_details.get('Github', '')
 
